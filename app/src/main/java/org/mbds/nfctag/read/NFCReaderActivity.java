@@ -77,8 +77,7 @@ text=findViewById(R.id.label);
                 // TODO Si c'est un numéro de téléphone, lancer un appel
                 // TODO Si c'est une page web lancer un navigateur pour afficher la page
                 // TODO Sinon afficher le contenu dans la textview
-
-                text.setText(s.getContent().toString()); 
+ 
                 Toast.makeText(this, s.getContent(), Toast.LENGTH_LONG).show();
                 Intent myIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(s.getContent()));
                 startActivity(myIntent);
