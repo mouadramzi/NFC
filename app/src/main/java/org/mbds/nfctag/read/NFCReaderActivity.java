@@ -1,21 +1,26 @@
 package org.mbds.nfctag.read;
 
+import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.provider.Settings;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import org.mbds.nfctag.MainActivity;
 import org.mbds.nfctag.R;
 import org.mbds.nfctag.model.TagContent;
 import org.mbds.nfctag.utils.Animation;
+import org.mbds.nfctag.write.NFCWriterActivity;
 
 public class NFCReaderActivity extends AppCompatActivity {
 
@@ -23,6 +28,7 @@ public class NFCReaderActivity extends AppCompatActivity {
     private PendingIntent pendingIntent;
     public static String TAG = "TAG";
     private NfcReaderViewModel nfcReaderViewModel;
+    TextView label1  ;
 TextView text ;
     // TODO Lire le contenu d'un tag et effectuer les actions en fonction du contenu
     // TODO Si c'est un numéro de téléphone, lancer un appel
@@ -35,7 +41,7 @@ TextView text ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-text=findViewById(R.id.label);
+label1= findViewById(R.id.label);
         setContentView(R.layout.read_tag_layout);
 
         nfcReaderViewModel = new ViewModelProvider(this).get(NfcReaderViewModel.class);
@@ -45,6 +51,7 @@ text=findViewById(R.id.label);
         // check NFC feature:
         if (nfcAdapter == null) {
             // TODO Afficher un message d'erreur si le téléphone n'est pas compatible NFC
+            Toast.makeText(this, "le téléphone n'est pas compatible NFC", Toast.LENGTH_SHORT).show();
             finish();
         }
         pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).
@@ -60,11 +67,19 @@ text=findViewById(R.id.label);
             if (!nfcAdapter.isEnabled()) {
                 // TODO Afficher un popup demandant à l'utilisateur d'activer le NFC
                 // TODO rediriger l'utilisateur vers les paramètres du téléphone
+                Toast.makeText(this, "This device  NFC is not activated.", Toast.LENGTH_LONG).show();
+
+                // TODO rediriger l'utilisateur vers les paramètres du téléphone
+                startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS));
+                finish();
             } else {
                 nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null);
             }
         } else {
             // TODO indiquer à l'utilisateur que son téléphone n'a pas de NFC
+            Toast.makeText(this, "This device doesn't support NFC.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
         }
 
         nfcReaderViewModel.getReadFailed().observe(this, readFailed -> {
@@ -77,10 +92,21 @@ text=findViewById(R.id.label);
                 // TODO Si c'est un numéro de téléphone, lancer un appel
                 // TODO Si c'est une page web lancer un navigateur pour afficher la page
                 // TODO Sinon afficher le contenu dans la textview
- 
-                Toast.makeText(this, s.getContent(), Toast.LENGTH_LONG).show();
-                Intent myIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(s.getContent()));
-                startActivity(myIntent);
+                //Ecirture ce fait dans writer  a travers tel:// et http://
+               String content = s.getContent().toString();
+             char content0= content.charAt(0) ;
+             if(content0=='h' || content0=='t'){
+           //      Toast.makeText(this, ""+content0, Toast.LENGTH_SHORT).show();
+                 Intent myIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(s.getContent()));
+                 startActivity(myIntent);
+             }
+
+                else if(content0==':'){
+                  Toast.makeText(this, ""+s.getContent(), Toast.LENGTH_LONG).show();
+
+                 startActivity(new Intent(this, NFCReaderActivity.class));
+
+             }
 
             }
         });
@@ -119,6 +145,9 @@ text=findViewById(R.id.label);
             Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
             nfcReaderViewModel.processNfcTag(rawMsgs);
             // TODO Si non, afficher un message d'erreur et rediriger l'utilisateur vers l'activité d'écriture
+            Toast.makeText(this, "Erreur!!", Toast.LENGTH_SHORT).show();
+
+            startActivity(new Intent(this, NFCWriterActivity.class));
         }
     }
 }
